@@ -33,8 +33,14 @@ jobs:
         go-version: 1.19
       id: go
 
+    - name: Intall golang-migrate
+      run: |
+        curl -L https://github.com/golang-migrate/migrate/releases/download/v4.15.2/migrate.linux-amd64.tar.gz | tar xvz
+        sudo mv migrate /usr/bin/
+        which migrate
+        
     - name: Run Migrations
-      run: make migrateup
+      run: make
 
     - name: Test
       run: make test
