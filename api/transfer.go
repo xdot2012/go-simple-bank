@@ -8,71 +8,74 @@ import (
 	db "github.com/xdot2012/simple-bank/db/sqlc"
 )
 
-type listAccountRequest struct {
+type listTransfersRequest struct {
 	PageID   int32 `form:"page_id" binding:"required,min=1"`
 	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
 }
 
-func (server *Server) listAccounts(ctx *gin.Context) {
-	var req listAccountRequest
+func (server *Server) listTransfers(ctx *gin.Context) {
+	var req listTransfersRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	arg := db.ListAccountsParams{
+	arg := db.ListTransfersParams{
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
 	}
 
-	accounts, err := server.store.ListAccounts(ctx, arg)
+	transfers, err := server.store.ListTransfers(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, accounts)
+	ctx.JSON(http.StatusOK, transfers)
 }
 
-type createAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=USD EUR"`
+type createTransferRequest struct {
+	FromAccountID int64  `json:"from_account_id" binding:"required,min=1"`
+	ToAccountID   int64  `json:"to_account_id" binding:"required,min=1"`
+	Status        string `json:"status" binding:"required"`
+	Amount        int64  `json:"amount" binding:"required,min=1"`
 }
 
-func (server *Server) createAccount(ctx *gin.Context) {
-	var req createAccountRequest
+func (server *Server) createTransfer(ctx *gin.Context) {
+	var req createTransferRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	arg := db.CreateAccountParams{
-		Owner:    req.Owner,
-		Currency: req.Currency,
-		Balance:  0,
+	arg := db.CreateTransferParams{
+		FromAccountID: req.FromAccountID,
+		ToAccountID:   req.ToAccountID,
+		Status:        req.Status,
+		Amount:        req.Amount,
 	}
 
-	account, err := server.store.CreateAccount(ctx, arg)
+	transfer, err := server.store.CreateTransfer(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, account)
+	ctx.JSON(http.StatusOK, transfer)
 }
 
-type getAccountRequest struct {
+type getTransferRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
-func (server *Server) getAccount(ctx *gin.Context) {
-	var req getAccountRequest
+func (server *Server) getTransfer(ctx *gin.Context) {
+	var req getTransferRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	account, err := server.store.GetAccount(ctx, req.ID)
+	transfer, err := server.store.GetTransfer(ctx, req.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
@@ -83,36 +86,38 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, account)
+	ctx.JSON(http.StatusOK, transfer)
 }
 
-type updateAccountURIRequest struct {
+type updateTransferURIRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
-type updateAccountBodyRequest struct {
-	Balance int64 `json:"balance" binding:"required"`
+type updateTransferBodyRequest struct {
+	Amount int64  `json:"amount" binding:"required"`
+	Status string `json:"status" binding:"required"`
 }
 
-func (server *Server) updateAccount(ctx *gin.Context) {
-	var req updateAccountURIRequest
+func (server *Server) updateTransfer(ctx *gin.Context) {
+	var req updateTransferURIRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	var reqBody updateAccountBodyRequest
+	var reqBody updateTransferBodyRequest
 	if err := ctx.ShouldBindJSON(&reqBody); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	arg := db.UpdateAccountParams{
-		ID:      req.ID,
-		Balance: reqBody.Balance,
+	arg := db.UpdateTransferParams{
+		ID:     req.ID,
+		Status: reqBody.Status,
+		Amount: reqBody.Amount,
 	}
 
-	account, err := server.store.UpdateAccount(ctx, arg)
+	transfer, err := server.store.UpdateTransfer(ctx, arg)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
@@ -123,21 +128,21 @@ func (server *Server) updateAccount(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, account)
+	ctx.JSON(http.StatusOK, transfer)
 }
 
-type deleteAccountRequest struct {
+type deleteTransferRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
-func (server *Server) deleteAccount(ctx *gin.Context) {
-	var req deleteAccountRequest
+func (server *Server) deleteTransfer(ctx *gin.Context) {
+	var req deleteTransferRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	err := server.store.DeleteAccount(ctx, req.ID)
+	err := server.store.DeleteTransfer(ctx, req.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
