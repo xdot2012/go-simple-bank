@@ -218,10 +218,21 @@ func TestGetAccountAPI(t *testing.T) {
 
 }
 
+func randomUser() db.User {
+	return db.User{
+		ID:             util.RandomInt(1, 1000),
+		Username:       util.RandomOwner(),
+		HashedPassword: "secret",
+		FullName:       util.RandomOwner(),
+		Email:          util.RandomEmail(),
+	}
+}
+
 func randomAccount() db.Account {
+	user := randomUser()
 	return db.Account{
 		ID:       util.RandomInt(1, 1000),
-		Owner:    util.RandomOwner(),
+		OwnerID:  user.ID,
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
