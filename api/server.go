@@ -1,54 +1,76 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	db "github.com/xdot2012/simple-bank/db/sqlc"
+	"github.com/xdot2012/simple-bank/token"
+	"github.com/xdot2012/simple-bank/util"
 )
 
 // Server serves HTTP requests for our banking service.
 type Server struct {
-	store  db.Store
-	router *gin.Engine
+	config     util.Config
+	store      db.Store
+	tokenMaker token.Maker
+	router     *gin.Engine
 }
 
 // NewServer creates a new HTTP server and setup routing.
-func NewServer(store db.Store) *Server {
-	server := &Server{store: store}
-	router := gin.Default()
+func NewServer(config util.Config, store db.Store) (*Server, error) {
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create token maker: %w", err)
+	}
+	server := &Server{
+		config:     config,
+		store:      store,
+		tokenMaker: tokenMaker,
+	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("currency", validCurrency)
 	}
 
-	// add routes to router
-	// ACCOUNTS
-	router.GET("/accounts/", server.listAccounts)
-	router.POST("/account", server.createAccount)
-	router.GET("/account/:id", server.getAccount)
-	router.PUT("/account/:id", server.updateAccount)
-	router.DELETE("/account/:id", server.deleteAccount)
+	server.setupRouter()
+	return server, nil
+}
 
-	// ENTRIES
-	router.GET("/entries/", server.listEntries)
-	router.POST("/entry/", server.createEntry)
-	router.GET("/entry/:id", server.getEntry)
-	router.PUT("/entry/:id", server.updateEntry)
-	router.DELETE("/entry/:id", server.deleteEntry)
-
-	// TRANSFERS
-	router.GET("/transfers/", server.listTransfers)
-	router.POST("/transfer/", server.createTransfer)
-	router.GET("/transfer/:id", server.getTransfer)
-	router.PUT("/transfer/:id", server.updateTransfer)
-	router.DELETE("/transfer/:id", server.deleteTransfer)
+// setupRouter adds routes to the server
+func (server *Server) setupRouter() {
+	router := gin.Default()
 
 	// USERS
 	router.POST("/user/", server.createUser)
+	router.POST("/login/", server.loginUser)
+
+	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
+
+	// ACCOUNTS
+	authRoutes.GET("/accounts/", server.listAccounts)
+	authRoutes.POST("/account", server.createAccount)
+	authRoutes.GET("/account/:id", server.getAccount)
+	authRoutes.PUT("/account/:id", server.updateAccount)
+	authRoutes.DELETE("/account/:id", server.deleteAccount)
+
+	// ENTRIES
+	authRoutes.GET("/entries/", server.listEntries)
+	authRoutes.POST("/entry/", server.createEntry)
+	authRoutes.GET("/entry/:id", server.getEntry)
+	authRoutes.PUT("/entry/:id", server.updateEntry)
+	authRoutes.DELETE("/entry/:id", server.deleteEntry)
+
+	// TRANSFERS
+	authRoutes.GET("/transfers/", server.listTransfers)
+	authRoutes.POST("/transfer/", server.createTransfer)
+	authRoutes.GET("/transfer/:id", server.getTransfer)
+	authRoutes.PUT("/transfer/:id", server.updateTransfer)
+	authRoutes.DELETE("/transfer/:id", server.deleteTransfer)
 
 	server.router = router
-	return server
 }
 
 func (server *Server) Start(address string) error {
