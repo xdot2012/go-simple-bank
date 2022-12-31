@@ -7,3 +7,8 @@ sudo nano ~/.bashrc
 ```
 export PATH=$PATH:~/go/bin
 ```
+
+Create new db migration:
+```bash
+migrate create -ext sql -dir db/migration -seq <migration_name>
+```
