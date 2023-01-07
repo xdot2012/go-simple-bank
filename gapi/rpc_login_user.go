@@ -7,12 +7,19 @@ import (
 	db "github.com/xdot2012/simple-bank/db/sqlc"
 	"github.com/xdot2012/simple-bank/pb"
 	"github.com/xdot2012/simple-bank/util"
+	"github.com/xdot2012/simple-bank/val"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
+	violations := validateLoginUserRequest(req)
+	if violations != nil {
+		return nil, InvalidArgumentError(violations)
+	}
+
 	user, err := server.store.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -67,4 +74,16 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 	}
 
 	return rsp, nil
+}
+
+func validateLoginUserRequest(req *pb.LoginUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateUsername(req.GetUsername()); err != nil {
+		violations = append(violations, fieldViolation("username", err))
+	}
+
+	if err := val.ValidatePassowrd(req.GetPassword()); err != nil {
+		violations = append(violations, fieldViolation("password", err))
+	}
+
+	return violations
 }
