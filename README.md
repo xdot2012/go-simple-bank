@@ -12,3 +12,12 @@ Create new db migration:
 ```bash
 migrate create -ext sql -dir db/migration -seq <migration_name>
 ```
+
+protoc
+evans
+swagger
+statik
+
+
+make startdb
+make serve
