@@ -38,3 +38,13 @@ Create gRPC entrypoint
 2. add rpc proto file import to service_simple_bank.proto
 3. generate protoc code with make proto
 3. create gapi go file
+
+
+Add Environment Variable
+1. change app.env
+2. update util/config.go
+
+logs
+Logstash
+Fluentd
+Grafana loki
