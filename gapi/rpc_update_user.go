@@ -15,9 +15,18 @@ import (
 )
 
 func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
+	authPayload, err := server.authorizeUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
 	violations := validateUpdateUserRequest(req)
 	if violations != nil {
 		return nil, InvalidArgumentError(violations)
+	}
+
+	if authPayload.UserID != req.GetUserId() {
+		return nil, invalidUserError()
 	}
 
 	arg := db.UpdateUserParams{
