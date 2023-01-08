@@ -13,23 +13,28 @@ Create new db migration:
 migrate create -ext sql -dir db/migration -seq <migration_name>
 ```
 
-protoc
-evans
-swagger
-statik
+protoc<br />
+evans<br />
+swagger<br />
+statik<br />
 
 
 Start Server
+```
 make startdb
 make serve
+```
 
-
-Create new query
+Create new call to database
+1. create query on db/query/
+2. run commands:
+```
 make sqlc
 make mock
+```
 
 Create gRPC entrypoint
-create new rpc proto file
-add rpc proto file import to service_simple_bank.proto
-generate protoc code with make proto
-create gapi go file
+1. create new rpc proto file
+2. add rpc proto file import to service_simple_bank.proto
+3. generate protoc code with make proto
+3. create gapi go file
