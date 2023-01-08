@@ -92,23 +92,26 @@ const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET
     hashed_password = COALESCE($1, hashed_password),
-    full_name = COALESCE($2, full_name),
-    email = COALESCE($3, email)
+    password_changed_at = COALESCE($2, password_changed_at),
+    full_name = COALESCE($3, full_name),
+    email = COALESCE($4, email)
 WHERE
-    id = $4
+    id = $5
 RETURNING id, username, hashed_password, full_name, email, password_changed_at, created_at
 `
 
 type UpdateUserParams struct {
-	HashedPassword sql.NullString `json:"hashed_password"`
-	FullName       sql.NullString `json:"full_name"`
-	Email          sql.NullString `json:"email"`
-	UserID         int64          `json:"user_id"`
+	HashedPassword    sql.NullString `json:"hashed_password"`
+	PasswordChangedAt sql.NullTime   `json:"password_changed_at"`
+	FullName          sql.NullString `json:"full_name"`
+	Email             sql.NullString `json:"email"`
+	UserID            int64          `json:"user_id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, updateUser,
 		arg.HashedPassword,
+		arg.PasswordChangedAt,
 		arg.FullName,
 		arg.Email,
 		arg.UserID,

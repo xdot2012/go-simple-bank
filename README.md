@@ -27,3 +27,9 @@ make serve
 Create new query
 make sqlc
 make mock
+
+Create gRPC entrypoint
+create new rpc proto file
+add rpc proto file import to service_simple_bank.proto
+generate protoc code with make proto
+create gapi go file
