@@ -19,5 +19,11 @@ swagger
 statik
 
 
+Start Server
 make startdb
 make serve
+
+
+Create new query
+make sqlc
+make mock

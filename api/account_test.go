@@ -21,7 +21,7 @@ import (
 
 // GET accounts/
 func TestListAccountsAPI(t *testing.T) {
-	user, _ := randomUser(t)
+	user, _ := getRandomUser(t)
 
 	accounts := make([]db.Account, 10)
 
@@ -148,8 +148,8 @@ func TestListAccountsAPI(t *testing.T) {
 
 // GET account/:id
 func TestGetAccountAPI(t *testing.T) {
-	user, _ := randomUser(t)
-	invalidUser, _ := randomUser(t)
+	user, _ := getRandomUser(t)
+	invalidUser, _ := getRandomUser(t)
 	account := randomAccount(t, user.ID)
 
 	testCases := []struct {
