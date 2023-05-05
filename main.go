@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/hibiken/asynq"
+	"github.com/hibiken/asynqmon"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -145,6 +146,12 @@ func runGatewayServer(config util.Config, store db.Store, taskDistributor worker
 
 	swaggerHandler := http.StripPrefix("/swagger/", http.FileServer(statikFS))
 	mux.Handle("/swagger/", swaggerHandler)
+
+	asynqMonitor := asynqmon.New(asynqmon.Options{
+		RootPath:     "/asynqmon",
+		RedisConnOpt: asynq.RedisClientOpt{Addr: config.RedisAddress},
+	})
+	mux.Handle(asynqMonitor.RootPath()+"/", asynqMonitor)
 
 	listener, err := net.Listen("tcp", config.HTTPServerAddress)
 	if err != nil {
